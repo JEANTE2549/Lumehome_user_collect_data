@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>LIFF User Form</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #ffe05c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card-container {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.4s ease;
+    }
+    .card-slide {
+      display: none;
+    }
+    .card-slide.active {
+      display: block;
+      animation: slideIn 0.4s ease forwards;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .nav-btns {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #004aad;
+      color: white;
+      cursor: pointer;
+    }
+    input, select {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    #progress-bar-wrapper {
+      width: 100%;
+      height: 8px;
+      background-color: #eee;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #4CAF50;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar-wrapper">
+    <div id="progress-bar"></div>
+  </div>
+  <div class="card-container">
+    <div class="card-slide active" id="step-0">
+      <h3>เป้าหมายของคุณ</h3>
+      <select id="role">
+        <option value="">-- เลือก --</option>
+        <option value="หาที่อยู่">หาที่อยู่</option>
+        <option value="นักลงทุน">หาอสังหาลงทุน</option>
+        <option value="ฟากขายทรัพย์">ฟากขายทรัพย์</option>
+      </select>
+      <div class="nav-btns">
+        <div></div>
+        <button onclick="nextStep()">▶</button>
+      </div>
+
+  <script>
+    const container = document.querySelector('.card-container');
+    let currentStep = 0;
+    let role = '';
+    const steps = [];
+
+    async function main() {
+      await liff.init({ liffId: '2007520214-3V1lDOWV' });
+    }
+
+    function updateProgressBar() {
+      const totalSteps = document.querySelectorAll('.card-slide').length - 1; // ลบ step-0
+      const progress = Math.min((currentStep / totalSteps) * 100, 100);
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+    }
+    const formData = {};
+
+    function nextStep() {
+      const current = document.getElementById(`step-${currentStep}`);
+      const inputs = current.querySelectorAll('input, select');
+      for (const input of inputs) {
+        const isRequired = input.hasAttribute('required');
+        if (isRequired && !input.value) {
+          alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+          return;
+        }
+        // ใช้ placeholder เป็น key ถ้าไม่มี id
+        const key = input.placeholder || input.id || `field_${currentStep}_${input.name || input.tagName}`;
+        formData[key] = input.value;
+      }
+      // Step 0 (role)
+      if (currentStep === 0) {
+        role = formData['role'];
+        if (!role) return alert('กรุณาเลือกบทบาท');
+        buildSteps();
+      }
+      const next = document.getElementById(`step-${currentStep + 1}`);
+      if (next) {
+        current.classList.remove('active');
+        currentStep++;
+        next.classList.add('active');
+        if (next.querySelector('#summary-content')) {
+          updateSummary();
+        }
+      next.classList.add('active');
+      updateProgressBar();
+      }
+    }
+
+    function prevStep() {
+      const current = document.getElementById(`step-${currentStep}`);
+      if (currentStep > 0) {
+        current.classList.remove('active');
+        currentStep--;
+        const previous = document.getElementById(`step-${currentStep}`);
+        if (previous) {
+          previous.classList.add('active');
+        }
+        updateProgressBar();
+      }
+    }
+
+    function updateSummary() {
+        const summary = document.getElementById('summary-content');
+        if (!summary) return;
+
+        // ดึงค่าจาก input ทั้งหมดในทุก slide ก่อนหน้า
+        const inputs = document.querySelectorAll('.card-slide input, .card-slide select');
+        const values = [];
+        inputs.forEach(input => {
+            if (input.closest('.card-slide').id !== `step-${currentStep}`) {
+            const label = input.placeholder || input.id || input.previousElementSibling?.textContent ;
+            values.push(`<p><strong>${label}:</strong> ${input.value || '(เว้นว่าง)'}</p>`);
+            }
+        });
+
+        summary.innerHTML = values.join('');
+        }
+    
+    function buildSteps() {
+      const html = [];
+      let stepId = 1;
+      const addSlide = (content) => {
+        html.push(`<div class="card-slide" id="step-${stepId}">${content}</div>`);
+        stepId++;
+      };
+
+      if (role === 'หาที่อยู่' || role === 'นักลงทุน') {
+        addSlide(`
+          <h3>ข้อมูลติดต่อ (ไม่บังคับ)</h3>
+          <input placeholder="ชื่อ" />
+          <input placeholder="นามสกุล" />
+          <input placeholder="เบอร์โทร" />
+          <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="nextStep()">▶</button>
+          </div>
+        `);
+        addSlide(`
+          <h3>ซื้อ หรือ เช่า</h3>
+          <select required />
+            <option value="">-- เลือก --</option>
+            <option value="ซื้อ">ซื้อ</option>
+            <option value="เช่า">เช่า</option>
+          </select>
+          <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="nextStep()">▶</button>
+          </div>
+        `);
+        addSlide(`
+          <h3>เลือกจังหวัด</h3>
+          <select required / id="จังหวัด" onchange="loadDistricts()">
+            <option value="">-- เลือกจังหวัด --</option>
+            <option>กรุงเทพมหานคร</option>
+            <option>เชียงใหม่</option>
+          </select>
+          <select id="อำเภอ">
+            <option value="">-- เลือกอำเภอ --</option>
+          </select>
+          <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="nextStep()">▶</button>
+          </div>
+        `);
+      }
+
+      if (role === 'ฟากขายทรัพย์') {
+        addSlide(`
+          <h3>ข้อมูลติดต่อ (จำเป็น)</h3>
+          <input placeholder="ชื่อ" required />
+          <input placeholder="นามสกุล" required />
+          <input placeholder="เบอร์โทร" inputmode="numeric" pattern="[0-9]*" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required />
+          <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="nextStep()">▶</button>
+          </div>
+        `);
+        addSlide(`
+          <h3>คุณคือ?</h3>
+          <select>
+            <option>เจ้าของทรัพย์</option>
+            <option>นายหน้าอสังหาริมทรัพย์</option>
+          </select>
+          <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="nextStep()">▶</button>
+          </div>
+        `);
+      }
+
+      addSlide(`
+        <h3>ตรวจสอบข้อมูลก่อนส่ง</h3>
+        <div id="summary-content"></div>
+        <div class="nav-btns">
+            <button onclick="prevStep()">◀</button>
+            <button onclick="submitForm()">ส่งข้อมูล</button>
+        </div>
+        `);
+
+    document.querySelectorAll('.card-slide:not(#step-0)').forEach(el => el.remove());
+    document.querySelector('.card-container').insertAdjacentHTML('beforeend', html.join(''));
+    }
+
+    function loadDistricts() {
+      const province = document.getElementById('จังหวัด').value;
+      const district = document.getElementById('อำเภอ');
+      district.innerHTML = '';
+      if (province === 'กรุงเทพมหานคร') {
+        district.innerHTML += '<option value="">-- เลือกอำเภอ --</option><option>บางนา</option><option>ดอนเมือง</option>';
+      } else if (province === 'เชียงใหม่') {
+        district.innerHTML += '<option value="">-- เลือกอำเภอ --</option><option>เมืองเชียงใหม่</option><option>แม่ริม</option>';
+      }
+    }
+
+    async function submitForm() {
+      const lines = [`📋 สรุปแบบฟอร์ม`, `บทบาท: ${role}`];
+      for (const [key, val] of Object.entries(formData)) {
+        lines.push(`${key}: ${val}`);
+      }
+      const message = lines.join('\n');
+
+      if (typeof liff !== 'undefined' && liff.isInClient()) {
+        liff.sendMessages([{ type: 'text', text: message }])
+          .then(() => liff.closeWindow())
+          .catch(err => alert('ส่งข้อความไม่สำเร็จ: ' + err));
+      } else {
+        alert("กรุณาเปิดลิงก์นี้ในแอพ LINE เพื่อส่งข้อมูล");
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
