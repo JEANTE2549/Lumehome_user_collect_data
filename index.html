@@ -191,7 +191,7 @@
         `);
         addSlide(`
           <h3>ซื้อ หรือ เช่า</h3>
-          <select required />
+          <select required /id="ซื้อหรือเช่า" >
             <option value="">-- เลือก --</option>
             <option value="ซื้อ">ซื้อ</option>
             <option value="เช่า">เช่า</option>
@@ -267,7 +267,7 @@
     }
 
     async function submitForm() {
-      const lines = [`📋 สรุปแบบฟอร์ม`, `บทบาท: ${role}`];
+      const lines = [`📋 สรุปแบบฟอร์ม`];
       for (const [key, val] of Object.entries(formData)) {
         lines.push(`${key}: ${val}`);
       }
