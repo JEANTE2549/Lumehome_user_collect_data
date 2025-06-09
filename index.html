@@ -68,7 +68,7 @@
     #progress-bar {
       height: 100%;
       width: 0%;
-      background-color: #4CAF50;
+      background-color: #4c77af;
       transition: width 0.3s ease;
     }
   </style>
@@ -98,11 +98,11 @@
     const steps = [];
 
     async function main() {
-      await liff.init({ liffId: '2007520214-3V1lDOWV' });
+      await liff.init({ liffId: '2007520214-Q2NWqw94' });
     }
 
     function updateProgressBar() {
-      const totalSteps = document.querySelectorAll('.card-slide').length - 1; // ลบ step-0
+      const totalSteps = document.querySelectorAll('.card-slide').length - 1; 
       const progress = Math.min((currentStep / totalSteps) * 100, 100);
       document.getElementById('progress-bar').style.width = `${progress}%`;
     }
@@ -183,7 +183,7 @@
           <h3>ข้อมูลติดต่อ (ไม่บังคับ)</h3>
           <input placeholder="ชื่อ" />
           <input placeholder="นามสกุล" />
-          <input placeholder="เบอร์โทร" />
+          <input placeholder="เบอร์โทร" inputmode="numeric" pattern="[0-9]*" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           <div class="nav-btns">
             <button onclick="prevStep()">◀</button>
             <button onclick="nextStep()">▶</button>
